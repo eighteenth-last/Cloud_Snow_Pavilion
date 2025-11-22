@@ -1,0 +1,42 @@
+# Maven
+Server/target/
+Server/.mvn/
+Server/mvnw
+Server/mvnw.cmd
+
+# Node.js
+web_front/admin/node_modules/
+web_front/admin/dist/
+web_front/admin/.vite/
+web_uniapp/node_modules/
+web_uniapp/dist/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads
+upload_img/*
+!upload_img/.gitkeep
+
+# Database
+*.sql.bak
+
+# Environment
+.env
+.env.local
+.env.*.local
