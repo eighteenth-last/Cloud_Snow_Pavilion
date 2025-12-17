@@ -369,15 +369,31 @@ const handleCheckout = () => {
 const submitOrder = async () => {
   submitting.value = true
   try {
+    // 获取每个商品的SKU
+    const itemsWithSku = []
+    for (const item of cartItems.value) {
+      try {
+        const res = await request.get(`/product/${item.id}/skus`)
+        if (res.data && res.data.length > 0) {
+          // 使用第一个SKU
+          itemsWithSku.push({
+            skuId: res.data[0].skuId,
+            quantity: item.quantity
+          })
+        } else {
+          ElMessage.error(`商品 ${item.name} 没有可用规格`)
+          return
+        }
+      } catch (error) {
+        ElMessage.error(`获取商品 ${item.name} 规格失败`)
+        return
+      }
+    }
+    
     const orderData = {
       orderType: orderType.value,
-      items: cartItems.value.map(item => ({
-        productId: item.id,
-        quantity: item.quantity,
-        price: item.price
-      })),
-      amount: finalAmount.value,
-      paymentMethod: paymentMethod.value,
+      storeId: 1, // 默认门店ID，可以根据实际情况修改
+      items: itemsWithSku,
       remark: orderForm.value.remark
     }
     

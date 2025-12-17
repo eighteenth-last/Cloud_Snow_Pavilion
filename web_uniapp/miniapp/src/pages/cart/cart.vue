@@ -15,7 +15,7 @@
 						<text v-if="item.checked" class="check-icon">✓</text>
 					</view>
 
-					<image :src="item.img || '/static/logo.png'" class="product-image" mode="aspectFill" />
+					<image :src="getImageUrl(item.img)" class="product-image" mode="aspectFill" />
 
 					<view class="product-info">
 						<text class="product-name">{{ item.name }}</text>
@@ -42,7 +42,7 @@
 						class="recommend-item"
 						@click="goToDetail(product.id)"
 					>
-						<image :src="product.img || '/static/logo.png'" class="recommend-image" mode="aspectFill" />
+						<image :src="getImageUrl(product.img)" class="recommend-image" mode="aspectFill" />
 						<text class="recommend-name">{{ product.name }}</text>
 						<view class="recommend-footer">
 							<text class="recommend-price">¥{{ product.price }}</text>
@@ -111,16 +111,26 @@ export default {
 		this.loadRecommend()
 	},
 	methods: {
-		loadCart() {
+			loadCart() {
 			// 从本地存储加载购物车
 			const cart = uni.getStorageSync('cart') || []
 			this.cartList = cart.map(item => ({
 				...item,
+				id: item.productId,
+				quantity: item.count,
 				checked: true
 			}))
 		},
 		saveCart() {
-			uni.setStorageSync('cart', this.cartList)
+			// 转换回原始数据结构保存
+			const cart = this.cartList.map(item => ({
+				productId: item.productId,
+				name: item.name,
+				price: item.price,
+				img: item.img,
+				count: item.quantity
+			}))
+			uni.setStorageSync('cart', cart)
 		},
 		async loadRecommend() {
 			try {
@@ -170,6 +180,14 @@ export default {
 			uni.switchTab({
 				url: '/pages/index/index'
 			})
+		},
+		getImageUrl(img) {
+			if (!img) return '/static/logo.png'
+			if (img.startsWith('http')) return img
+			if (img.startsWith('/upload_img/')) {
+				return 'http://localhost:8080/api' + img
+			}
+			return img
 		},
 		checkout() {
 			if (this.checkedCount === 0) {
@@ -228,8 +246,8 @@ export default {
 }
 
 .checkbox.checked {
-	background-color: #3cc51f;
-	border-color: #3cc51f;
+	background-color: #94d888;
+	border-color: #94d888;
 }
 
 .check-icon {
@@ -305,69 +323,86 @@ export default {
 
 .recommend-section {
 	margin-top: 20rpx;
-	background-color: #fff;
+	background: linear-gradient(to bottom, #fff, #fafafa);
 	padding: 30rpx;
+	border-radius: 20rpx 20rpx 0 0;
 }
 
 .section-title {
-	font-size: 32rpx;
+	font-size: 34rpx;
 	font-weight: bold;
 	color: #333;
 	margin-bottom: 30rpx;
+	padding-bottom: 20rpx;
+	border-bottom: 4rpx solid #94d888;
+	width: fit-content;
+	position: relative;
 }
 
 .recommend-list {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 20rpx;
+	justify-content: space-between;
 }
 
 .recommend-item {
-	width: 320rpx;
-	background-color: #f5f5f5;
-	border-radius: 15rpx;
-	padding: 20rpx;
+	width: 330rpx;
+	background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+	border-radius: 20rpx;
+	padding: 0;
+	margin-bottom: 20rpx;
+	box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
+	transition: all 0.3s;
+	overflow: hidden;
 }
 
 .recommend-image {
 	width: 100%;
-	height: 280rpx;
-	border-radius: 10rpx;
-	margin-bottom: 15rpx;
+	height: 300rpx;
+	border-radius: 0;
+	margin-bottom: 0;
+	object-fit: cover;
 }
 
 .recommend-name {
 	display: block;
 	font-size: 28rpx;
+	font-weight: 500;
 	color: #333;
-	margin-bottom: 15rpx;
+	margin-bottom: 10rpx;
+	padding: 0 20rpx;
+	margin-top: 15rpx;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+	height: 40rpx;
+	line-height: 40rpx;
 }
 
 .recommend-footer {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
+	padding: 15rpx 20rpx 20rpx;
 }
 
 .recommend-price {
-	font-size: 32rpx;
+	font-size: 36rpx;
 	color: #ff6b6b;
 	font-weight: bold;
 }
 
 .btn-add {
-	width: 50rpx;
-	height: 50rpx;
-	background-color: #3cc51f;
+	width: 56rpx;
+	height: 56rpx;
+	background: linear-gradient(135deg, #94d888 0%, #7bc46f 100%);
 	color: #fff;
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 36rpx;
+	font-size: 38rpx;
+	box-shadow: 0 4rpx 12rpx rgba(148, 216, 136, 0.4);
 }
 
 .empty-cart {
@@ -390,7 +425,7 @@ export default {
 }
 
 .btn-go-shop {
-	background-color: #3cc51f;
+	background-color: #94d888;
 	color: #fff;
 	padding: 25rpx 80rpx;
 	border-radius: 50rpx;
@@ -432,7 +467,7 @@ export default {
 }
 
 .btn-checkout {
-	background-color: #3cc51f;
+	background-color: #94d888;
 	color: #fff;
 	padding: 25rpx 50rpx;
 	border-radius: 50rpx;

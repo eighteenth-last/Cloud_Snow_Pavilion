@@ -47,6 +47,10 @@
           <el-icon><Ticket /></el-icon>
           <span>优惠券管理</span>
         </el-menu-item>
+        <el-menu-item index="/carousel">
+          <el-icon><Picture /></el-icon>
+          <span>轮播图管理</span>
+        </el-menu-item>
         <el-menu-item index="/analysis">
           <el-icon><TrendCharts /></el-icon>
           <span>收入分析</span>

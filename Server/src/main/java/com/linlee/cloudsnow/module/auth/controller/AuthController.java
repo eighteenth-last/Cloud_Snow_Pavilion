@@ -177,12 +177,12 @@ public class AuthController {
             throw new BusinessException("验证码错误或已过期");
         }
         
-        // 3. 查询或创建用户
+        // 3. 查询或创建用户（C端用户不设置租户ID）
         User user = userService.getByMobile(request.getMobile());
+        
         if (user == null) {
             // 新用户，注册账号
-            Long tenantId = request.getTenantId() != null ? request.getTenantId() : 1L;
-            user = userService.createUser(request.getMobile(), tenantId);
+            user = userService.createUser(request.getMobile(), null);
         }
         
         // 4. 使用Sa-Token进行登录
@@ -202,22 +202,85 @@ public class AuthController {
     @Operation(summary = "微信小程序登录")
     @PostMapping("/wxLogin")
     public Result<LoginResponse> wxLogin(@RequestBody WxLoginRequest request) {
-        // TODO: 实现微信登录逻辑
-        // 1. 使用code换取openid
-        // 2. 查询或创建用户
-        // 3. 使用Sa-Token进行登录
+        // 微信小程序登录流程：
+        // 1. 使用code调用微信接口换取openid和session_key
+        // 2. 根据openid查询或创建用户
+        // 3. 更新用户信息（昵称、头像等）
+        // 4. 使用Sa-Token进行登录
         
-        // 模拟登录成功
-        Long userId = 1L;
-        StpUtil.login(userId);
+        try {
+            // 1. 调用微信接口获取openid
+            // 实际项目中需要集成微信API：
+            // String openid = getWxOpenid(request.getCode());
+            // 开发环境使用code作为模拟openid
+            String openid = "wx_" + request.getCode();
+            
+            if (openid == null) {
+                return Result.fail("微信登录失败");
+            }
+            
+            // 2. 查询或创建用户
+            Long tenantId = request.getTenantId() != null ? request.getTenantId() : 1L;
+            // 使用UserServiceImpl中的getByOpenidAndTenant方法
+            User user = ((com.linlee.cloudsnow.module.user.service.impl.UserServiceImpl) userService)
+                    .getByOpenidAndTenant(openid, tenantId);
+            
+            if (user == null) {
+                // 新用户，创建账号（C端用户不设置租户ID）
+                user = new User();
+                user.setOpenid(openid);
+                user.setNick(request.getNickName() != null ? request.getNickName() : "微信用户");
+                user.setAvatar(request.getAvatarUrl());
+                user.setTenantId(null);
+                user.setStatus(1);
+                user.setVipLevel(0);
+                user.setPoints(0);
+                userService.save(user);
+            } else {
+                // 更新用户信息
+                if (request.getNickName() != null) {
+                    user.setNick(request.getNickName());
+                }
+                if (request.getAvatarUrl() != null) {
+                    user.setAvatar(request.getAvatarUrl());
+                }
+                userService.updateById(user);
+            }
+            
+            // 3. 使用Sa-Token进行登录
+            StpUtil.login(user.getUserId());
+            
+            // 4. 返回登录信息
+            LoginResponse response = new LoginResponse();
+            response.setToken(StpUtil.getTokenValue());
+            response.setUserId(user.getUserId());
+            response.setNick(user.getNick());
+            response.setAvatar(user.getAvatar());
+            response.setTenantId(user.getTenantId());
+            
+            return Result.success(response);
+            
+        } catch (Exception e) {
+            log.error("微信登录失败", e);
+            return Result.fail("微信登录失败");
+        }
         
-        LoginResponse response = new LoginResponse();
-        response.setToken(StpUtil.getTokenValue());
-        response.setUserId(userId);
-        response.setNick("微信用户");
-        response.setTenantId(request.getTenantId());
-        
-        return Result.success(response);
+        // 实际集成微信API的示例代码：
+        /*
+        private String getWxOpenid(String code) {
+            String appId = "your_app_id";
+            String appSecret = "your_app_secret";
+            String url = String.format(
+                "https://api.weixin.qq.com/sns/jscode2session?appid=%s&secret=%s&js_code=%s&grant_type=authorization_code",
+                appId, appSecret, code
+            );
+            
+            // 使用RestTemplate或HttpClient调用微信API
+            String response = restTemplate.getForObject(url, String.class);
+            JSONObject json = JSON.parseObject(response);
+            return json.getString("openid");
+        }
+        */
     }
 
     @Operation(summary = "退出登录")

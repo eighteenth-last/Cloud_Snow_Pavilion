@@ -53,7 +53,7 @@
 				:key="item.id"
 				class="goods-item"
 			>
-				<image :src="item.img || '/static/logo.png'" class="goods-image" mode="aspectFill" />
+				<image :src="getImageUrl(item.img)" class="goods-image" mode="aspectFill" />
 				<view class="goods-info">
 					<text class="goods-name">{{ item.name }}</text>
 					<text class="goods-spec" v-if="item.spec">{{ item.spec }}</text>
@@ -155,13 +155,27 @@ export default {
 	},
 	onLoad() {
 		this.loadCheckoutData()
-		this.loadDefaultStore()
+		this.loadStore()
 	},
 	methods: {
 		loadCheckoutData() {
 			// 从临时存储获取结算商品
 			const items = uni.getStorageSync('checkoutItems') || []
 			this.goodsList = items
+		},
+		loadStore() {
+			// 从缓存读取选择的门店
+			const cachedStore = uni.getStorageSync('checkoutStore')
+			if (cachedStore) {
+				this.store = {
+					storeId: cachedStore.id,
+					storeName: cachedStore.name,
+					address: cachedStore.address
+				}
+			} else {
+				// 如果没有缓存，尝试加载默认门店
+				this.loadDefaultStore()
+			}
 		},
 		async loadDefaultStore() {
 			try {
@@ -170,7 +184,12 @@ export default {
 					method: 'GET'
 				})
 				if (res.data.code === 200 && res.data.data.length > 0) {
-					this.store = res.data.data[0]
+					const store = res.data.data[0]
+					this.store = {
+						storeId: store.id,
+						storeName: store.name,
+						address: store.address
+					}
 				}
 			} catch (error) {
 				console.error('加载门店信息失败', error)
@@ -190,6 +209,51 @@ export default {
 				title: '优惠券选择功能开发中',
 				icon: 'none'
 			})
+		},
+		async loadProductSkus() {
+			try {
+				const items = []
+				
+				// 为每个商品获取默认SKU
+				for (const item of this.goodsList) {
+					const res = await uni.request({
+						url: `http://localhost:8080/api/product/${item.id}/skus`,
+						method: 'GET'
+					})
+					
+					if (res.data.code === 200 && res.data.data) {
+						const skus = res.data.data
+						// 使用第一个SKU作为默认SKU
+						if (skus && skus.length > 0) {
+							items.push({
+								skuId: skus[0].skuId,
+								quantity: item.quantity
+							})
+						} else {
+							uni.showToast({
+								title: `商品 ${item.name} 没有可用规格`,
+								icon: 'none'
+							})
+							return null
+						}
+					} else {
+						uni.showToast({
+							title: `加载商品信息失败`,
+							icon: 'none'
+						})
+						return null
+					}
+				}
+				
+				return items
+			} catch (error) {
+				console.error('加载SKU失败', error)
+				uni.showToast({
+					title: '加载商品规格失败',
+					icon: 'none'
+				})
+				return null
+			}
 		},
 		async submitOrder() {
 			if (!this.store.storeId) {
@@ -237,18 +301,19 @@ export default {
 					title: '提交中...'
 				})
 
+				// 需要先加载每个商品的SKU
+				const items = await this.loadProductSkus()
+				if (!items) {
+					return
+				}
+				
 				const orderData = {
 					storeId: this.store.storeId,
 					orderType: this.orderType,
 					addressId: this.currentAddress?.id,
-					items: this.goodsList.map(item => ({
-						productId: item.id,
-						quantity: item.quantity,
-						price: item.price
-					})),
+					items: items,
 					couponId: this.selectedCoupon?.id,
-					remark: this.remark,
-					amount: this.totalAmount
+					remark: this.remark
 				}
 
 				const res = await uni.request({
@@ -263,7 +328,7 @@ export default {
 				uni.hideLoading()
 
 				if (res.data.code === 200) {
-					const orderId = res.data.data.orderId
+					const orderId = res.data.data  // 后端直接返回orderId
 					
 					uni.showToast({
 						title: '下单成功',
@@ -297,6 +362,21 @@ export default {
 					icon: 'none'
 				})
 			}
+		},
+		// 处理图片URL
+		getImageUrl(img) {
+			if (!img) {
+				return '/static/logo.png'
+			}
+			// 如果是相对路径，转换为完整URL
+			if (img.startsWith('/upload_img/')) {
+				return `http://localhost:8080/api${img}`
+			}
+			// 如果已经是完整URL
+			if (img.startsWith('http://') || img.startsWith('https://')) {
+				return img
+			}
+			return '/static/logo.png'
 		}
 	}
 }
@@ -325,7 +405,7 @@ export default {
 
 .add-address {
 	font-size: 28rpx;
-	color: #3cc51f;
+	color: #94d888;
 }
 
 .store-section {
@@ -368,8 +448,8 @@ export default {
 }
 
 .type-btn.active {
-	border-color: #3cc51f;
-	color: #3cc51f;
+	border-color: #94d888;
+	color: #94d888;
 	background-color: rgba(60, 197, 31, 0.05);
 }
 
@@ -574,7 +654,7 @@ export default {
 }
 
 .btn-submit {
-	background-color: #3cc51f;
+	background-color: #94d888;
 	color: #fff;
 	padding: 25rpx 80rpx;
 	border-radius: 50rpx;

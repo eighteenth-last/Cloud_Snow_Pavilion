@@ -30,6 +30,15 @@ public class SaTokenConfig implements WebMvcConfigurer {
                             "/auth/admin/register",
                             "/auth/getSmsCode",
                             "/auth/wxLogin",
+                            "/product/list",
+                            "/product/recommend",
+                            "/product/{id}",
+                            "/product/{id}/skus",
+                            "/category/list",
+                            "/carousel/list",
+                            "/store/list",
+                            "/store/nearby",
+                            "/store/{id}",
                             "/file/**",
                             "/upload_img/**",
                             "/doc.html",
@@ -39,6 +48,7 @@ public class SaTokenConfig implements WebMvcConfigurer {
                             "/favicon.ico"
                     )
                     .check(r -> StpUtil.checkLogin());
-        })).addPathPatterns("/**");
+        })).addPathPatterns("/**")
+          .excludePathPatterns("/upload_img/**"); // 明确排除静态资源
     }
 }

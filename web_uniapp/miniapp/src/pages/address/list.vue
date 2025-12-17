@@ -212,7 +212,7 @@ export default {
 	bottom: 30rpx;
 	left: 30rpx;
 	right: 30rpx;
-	background-color: #3cc51f;
+	background-color: #94d888;
 	color: #fff;
 	text-align: center;
 	padding: 30rpx 0;

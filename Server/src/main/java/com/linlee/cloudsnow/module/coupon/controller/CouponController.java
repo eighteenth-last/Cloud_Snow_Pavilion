@@ -89,7 +89,7 @@ public class CouponController {
             wrapper.eq(UserCoupon::getStatus, status);
         }
         
-        wrapper.orderByDesc(UserCoupon::getReceiveTime);
+        wrapper.orderByDesc(UserCoupon::getUserCouponId);
         
         List<UserCoupon> list = userCouponMapper.selectList(wrapper);
         return Result.success(list);

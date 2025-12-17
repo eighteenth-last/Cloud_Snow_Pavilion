@@ -3,7 +3,11 @@ package com.linlee.cloudsnow.module.common.controller;
 import com.linlee.cloudsnow.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -58,12 +62,38 @@ public class FileController {
             // 返回文件访问路径（相对路径）
             String fileUrl = "/upload_img/" + fileName;
             
-            // 使用code=0返回，与前端判断一致
-            return new Result<>(0, "上传成功", fileUrl);
+            return Result.success("上传成功", fileUrl);
 
         } catch (IOException e) {
             e.printStackTrace();
             return Result.fail("文件上传失败: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "获取图片")
+    @GetMapping("/image/{filename:.+}")
+    public ResponseEntity<Resource> getImage(@PathVariable String filename) {
+        try {
+            Path filePath = Paths.get(UPLOAD_DIR).resolve(filename);
+            Resource resource = new FileSystemResource(filePath);
+            
+            if (!resource.exists() || !resource.isReadable()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // 获取文件的 MIME 类型
+            String contentType = Files.probeContentType(filePath);
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CACHE_CONTROL, "max-age=3600")
+                    .body(resource);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
         }
     }
 }

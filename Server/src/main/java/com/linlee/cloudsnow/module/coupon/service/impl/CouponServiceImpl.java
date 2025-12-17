@@ -65,13 +65,13 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
         if (!userCoupon.getUserId().equals(userId)) {
             throw new BusinessException("无权使用该优惠券");
         }
-        if (userCoupon.getStatus() != 0) {
+        if (userCoupon.getStatus() != 1) {
             throw new BusinessException("优惠券已使用或已过期");
         }
 
         // 更新为已使用
-        userCoupon.setStatus(1);
-        userCoupon.setUseTime(LocalDateTime.now());
+        userCoupon.setStatus(2);
+        userCoupon.setUsedTime(LocalDateTime.now());
         userCouponMapper.updateById(userCoupon);
     }
 

@@ -2,7 +2,7 @@
 	<view class="container">
 		<!-- 用户信息 -->
 		<view class="user-info">
-			<image :src="userInfo.avatar || '/static/logo.png'" class="avatar" mode="aspectFill" />
+			<image :src="getImageUrl(userInfo.avatar)" class="avatar" mode="aspectFill" />
 			<view class="user-detail">
 				<text class="user-name">{{ userInfo.nick || '点击登录' }}</text>
 				<text class="user-mobile">{{ userInfo.mobile || '' }}</text>
@@ -56,17 +56,17 @@
 			<view class="menu-item" @click="goToPage('coupon')">
 				<text class="menu-icon">🎫</text>
 				<text class="menu-name">我的优惠券</text>
-				<text class="menu-arrow">></text>
+				<text class="menu-arrow">›</text>
 			</view>
 			<view class="menu-item" @click="goToPage('address')">
 				<text class="menu-icon">📍</text>
 				<text class="menu-name">收货地址</text>
-				<text class="menu-arrow">></text>
+				<text class="menu-arrow">›</text>
 			</view>
 			<view class="menu-item" @click="goToPage('settings')">
 				<text class="menu-icon">⚙️</text>
 				<text class="menu-name">设置</text>
-				<text class="menu-arrow">></text>
+				<text class="menu-arrow">›</text>
 			</view>
 		</view>
 
@@ -187,6 +187,20 @@ export default {
 					icon: 'none'
 				})
 			}
+		},
+		getImageUrl(img) {
+			if (!img) {
+				return '/static/logo.png'
+			}
+			// 如果是相对路径，转换为完整URL
+			if (img.startsWith('/upload_img/')) {
+				return `http://localhost:8080/api${img}`
+			}
+			// 如果已经是完整URL
+			if (img.startsWith('http://') || img.startsWith('https://')) {
+				return img
+			}
+			return '/static/logo.png'
 		}
 	}
 }
@@ -194,16 +208,18 @@ export default {
 
 <style scoped>
 .container {
-	background-color: #f5f5f5;
+	background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 50%);
 	min-height: 100vh;
 	padding-bottom: 40rpx;
 }
 
 .user-info {
 	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-	padding: 60rpx 30rpx;
+	padding: 80rpx 30rpx 50rpx;
 	display: flex;
 	align-items: center;
+	position: relative;
+	box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.25);
 }
 
 .avatar {
@@ -245,7 +261,11 @@ export default {
 	background-color: #fff;
 	display: flex;
 	padding: 40rpx 30rpx;
-	margin-bottom: 20rpx;
+	margin: -30rpx 20rpx 20rpx;
+	border-radius: 20rpx;
+	box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
+	position: relative;
+	z-index: 10;
 }
 
 .info-item {
@@ -253,11 +273,23 @@ export default {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	position: relative;
+}
+
+.info-item:not(:last-child)::after {
+	content: '';
+	position: absolute;
+	right: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 1rpx;
+	height: 60rpx;
+	background: linear-gradient(180deg, transparent 0%, #e5e5e5 50%, transparent 100%);
 }
 
 .info-value {
-	font-size: 36rpx;
-	font-weight: bold;
+	font-size: 38rpx;
+	font-weight: 700;
 	color: #333;
 	margin-bottom: 10rpx;
 }
@@ -270,12 +302,14 @@ export default {
 .order-section {
 	background-color: #fff;
 	padding: 30rpx;
-	margin-bottom: 20rpx;
+	margin: 0 20rpx 20rpx;
+	border-radius: 20rpx;
+	box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
 }
 
 .section-title {
 	font-size: 32rpx;
-	font-weight: bold;
+	font-weight: 700;
 	color: #333;
 	margin-bottom: 30rpx;
 }
@@ -303,14 +337,23 @@ export default {
 
 .menu-section {
 	background-color: #fff;
-	margin-bottom: 20rpx;
+	margin: 0 20rpx 20rpx;
+	border-radius: 20rpx;
+	overflow: hidden;
+	box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
 }
 
 .menu-item {
 	display: flex;
 	align-items: center;
 	padding: 35rpx 30rpx;
-	border-bottom: 2rpx solid #f5f5f5;
+	border-bottom: 1rpx solid #f5f5f5;
+	transition: all 0.3s;
+	position: relative;
+}
+
+.menu-item:active {
+	background-color: #f8f9fa;
 }
 
 .menu-item:last-child {
@@ -318,19 +361,20 @@ export default {
 }
 
 .menu-icon {
-	font-size: 40rpx;
-	margin-right: 20rpx;
+	font-size: 44rpx;
+	margin-right: 24rpx;
 }
 
 .menu-name {
 	flex: 1;
 	font-size: 30rpx;
 	color: #333;
+	font-weight: 500;
 }
 
 .menu-arrow {
-	font-size: 28rpx;
-	color: #999;
+	font-size: 32rpx;
+	color: #ccc;
 }
 
 .action-section {
@@ -339,18 +383,26 @@ export default {
 
 .btn-login,
 .btn-logout {
-	background-color: #3cc51f;
+	background: linear-gradient(135deg, #94d888 0%, #7bc46f 100%);
 	color: #fff;
 	text-align: center;
-	padding: 30rpx 0;
-	border-radius: 50rpx;
+	padding: 32rpx 0;
+	border-radius: 28rpx;
 	font-size: 32rpx;
-	font-weight: bold;
+	font-weight: 600;
+	box-shadow: 0 8rpx 24rpx rgba(60, 197, 31, 0.25);
+	transition: all 0.3s;
+}
+
+.btn-login:active,
+.btn-logout:active {
+	transform: scale(0.98);
 }
 
 .btn-logout {
-	background-color: #fff;
+	background: #fff;
 	color: #666;
 	border: 2rpx solid #e5e5e5;
+	box-shadow: none;
 }
 </style>

@@ -3,8 +3,13 @@
 		{
 			"path": "pages/index/index",
 			"style": {
-				"navigationBarTitleText": "雪阁咖啡",
 				"navigationBarBackgroundColor": "#ffffff"
+			}
+		},
+		{
+			"path": "pages/menu/menu",
+			"style": {
+				"navigationBarTitleText": "菜单"
 			}
 		},
 		{
@@ -73,35 +78,44 @@
 			"style": {
 				"navigationBarTitleText": "我的"
 			}
+		},
+		{
+			"path": "pages/user/settings",
+			"style": {
+				"navigationBarTitleText": "设置"
+			}
 		}
 	],
 	"tabBar": {
-		"color": "#7A7E83",
-		"selectedColor": "#3cc51f",
-		"borderStyle": "black",
+		"color": "#999999",
+		"selectedColor": "#94d888",
+		"borderStyle": "white",
 		"backgroundColor": "#ffffff",
+		"fontSize": "40px",
+		"height": "70px",
+		"iconWidth": "40px",
 		"list": [
 			{
 				"pagePath": "pages/index/index",
-				"text": "首页"
+				"text": "🏠"
 			},
 			{
-				"pagePath": "pages/cart/cart",
-				"text": "购物车"
+				"pagePath": "pages/menu/menu",
+				"text": "📋"
 			},
 			{
 				"pagePath": "pages/order/list",
-				"text": "订单"
+				"text": "📝"
 			},
 			{
 				"pagePath": "pages/user/index",
-				"text": "我的"
+				"text": "👤"
 			}
 		]
 	},
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "雪阁咖啡",
+		"navigationBarTitleText": "云阶雪阁",
 		"navigationBarBackgroundColor": "#ffffff",
 		"backgroundColor": "#F8F8F8"
 	}

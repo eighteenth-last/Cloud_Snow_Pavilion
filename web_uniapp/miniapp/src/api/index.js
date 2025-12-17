@@ -27,16 +27,30 @@ export const authApi = {
 // ==================== 商品相关 ====================
 export const productApi = {
 	// 获取商品列表
-	getList: (categoryId) => get('/product/list', { categoryId }),
+	getList: (categoryId) => {
+		const params = {}
+		if (categoryId !== null && categoryId !== undefined) {
+			params.categoryId = categoryId
+		}
+		return get('/product/list', params)
+	},
 	
 	// 分页查询商品
-	getPage: (current, size, name, categoryId) => get('/product/page', { current, size, name, categoryId }),
+	getPage: (current, size, name, categoryId) => {
+		const params = { current, size }
+		if (name) params.name = name
+		if (categoryId !== null && categoryId !== undefined) params.categoryId = categoryId
+		return get('/product/page', params)
+	},
 	
 	// 获取商品详情
 	getDetail: (id) => get(`/product/${id}`),
 	
 	// 搜索商品
-	search: (keyword) => get('/product/search', { keyword })
+	search: (keyword) => get('/product/search', { keyword }),
+	
+	// 获取商品分类
+	getCategories: () => get('/category/list')
 }
 
 // ==================== 订单相关 ====================
@@ -45,7 +59,13 @@ export const orderApi = {
 	create: (orderData) => post('/order/create', orderData),
 	
 	// 获取订单列表
-	getList: (status) => get('/order/list', { status }),
+	getList: (status) => {
+		const params = {}
+		if (status !== null && status !== undefined) {
+			params.status = status
+		}
+		return get('/order/list', params)
+	},
 	
 	// 获取订单详情
 	getDetail: (id) => get(`/order/${id}`),
@@ -84,7 +104,13 @@ export const addressApi = {
 // ==================== 优惠券相关 ====================
 export const couponApi = {
 	// 获取优惠券列表
-	getList: (status) => get('/coupon/list', { status }),
+	getList: (status) => {
+		const params = {}
+		if (status !== null && status !== undefined) {
+			params.status = status
+		}
+		return get('/coupon/list', params)
+	},
 	
 	// 获取可用优惠券
 	getAvailable: () => get('/coupon/available'),
@@ -102,7 +128,12 @@ export const storeApi = {
 	getDetail: (id) => get(`/store/${id}`),
 	
 	// 获取附近门店
-	getNearby: (latitude, longitude) => get('/store/nearby', { latitude, longitude })
+	getNearby: (latitude, longitude) => {
+		const params = {}
+		if (latitude !== null && latitude !== undefined) params.latitude = latitude
+		if (longitude !== null && longitude !== undefined) params.longitude = longitude
+		return get('/store/nearby', params)
+	}
 }
 
 // ==================== 用户相关 ====================

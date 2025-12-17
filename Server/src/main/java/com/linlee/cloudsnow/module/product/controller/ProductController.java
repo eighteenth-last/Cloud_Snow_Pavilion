@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linlee.cloudsnow.common.result.Result;
 import com.linlee.cloudsnow.module.product.entity.Product;
+import com.linlee.cloudsnow.module.product.entity.Sku;
+import com.linlee.cloudsnow.module.product.mapper.SkuMapper;
 import com.linlee.cloudsnow.module.product.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,6 +27,9 @@ public class ProductController {
 
     @Autowired
     private ProductService productService;
+    
+    @Autowired
+    private SkuMapper skuMapper;
 
     @Operation(summary = "获取商品列表")
     @GetMapping("/list")
@@ -116,5 +121,30 @@ public class ProductController {
         product.setStatus(status);
         productService.updateById(product);
         return Result.success();
+    }
+
+    @Operation(summary = "推荐商品")
+    @GetMapping("/recommend")
+    public Result<List<Product>> recommend(
+            @RequestParam(required = false, defaultValue = "6") Integer limit) {
+        // 返回热门商品或随机推荐商品
+        List<Product> list = productService.list(
+                new LambdaQueryWrapper<Product>()
+                        .eq(Product::getStatus, 1)
+                        .orderByDesc(Product::getCreatedAt)
+                        .last("LIMIT " + limit)
+        );
+        return Result.success(list);
+    }
+    
+    @Operation(summary = "获取商品SKU列表")
+    @GetMapping("/{id}/skus")
+    public Result<List<Sku>> getSkusByProductId(@PathVariable Long id) {
+        List<Sku> skus = skuMapper.selectList(
+                new LambdaQueryWrapper<Sku>()
+                        .eq(Sku::getProductId, id)
+                        .orderByAsc(Sku::getSkuId)
+        );
+        return Result.success(skus);
     }
 }

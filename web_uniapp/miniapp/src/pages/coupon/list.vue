@@ -170,7 +170,7 @@ export default {
 }
 
 .tab-item.active {
-	color: #3cc51f;
+	color: #94d888;
 	font-weight: bold;
 }
 
@@ -182,7 +182,7 @@ export default {
 	transform: translateX(-50%);
 	width: 60rpx;
 	height: 4rpx;
-	background-color: #3cc51f;
+	background-color: #94d888;
 }
 
 .coupon-list {

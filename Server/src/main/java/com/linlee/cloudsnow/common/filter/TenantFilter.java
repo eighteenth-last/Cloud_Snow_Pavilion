@@ -57,7 +57,12 @@ public class TenantFilter implements Filter {
                 // 区分B端（后台管理-租户/老板）和C端（小程序用户）
                 if (loginIdStr.startsWith("admin:")) {
                     // B端：租户/老板登录
-                    Long staffId = Long.parseLong(loginIdStr.substring(6));
+                    String staffIdStr = loginIdStr.substring(6);
+                    if (staffIdStr.isEmpty()) {
+                        log.error("请求 {} - loginId格式错误: {}", requestURI, loginIdStr);
+                        throw new RuntimeException("登录ID格式错误");
+                    }
+                    Long staffId = Long.parseLong(staffIdStr);
                     tenantId = userTenantCache.get(staffId);
                     
                     if (tenantId == null) {
@@ -82,28 +87,34 @@ public class TenantFilter implements Filter {
                     }
                 } else {
                     // C端：小程序C端用户登录
-                    Long userId = Long.parseLong(loginIdStr);
-                    tenantId = userTenantCache.get(userId);
-                    
-                    if (tenantId == null) {
-                        // 临时设置一个标记，让拦截器跳过
-                        TenantContext.setIgnore(true);
-                        try {
-                            User user = userService.getById(userId);
-                            if (user != null && user.getTenantId() != null) {
-                                tenantId = user.getTenantId();
-                                userTenantCache.put(userId, tenantId);
-                                log.debug("请求 {} - 设置租户ID: {} (从数据库-C端用户)", requestURI, tenantId);
-                            } else {
-                                log.error("请求 {} - C端用户 {} 没有租户ID，数据异常", requestURI, userId);
-                                throw new RuntimeException("用户数据异常，请联系管理员");
+                    try {
+                        Long userId = Long.parseLong(loginIdStr);
+                        
+                        tenantId = userTenantCache.get(userId);
+                        
+                        if (tenantId == null) {
+                            // 临时设置一个标记，让拦截器跳过
+                            TenantContext.setIgnore(true);
+                            try {
+                                User user = userService.getById(userId);
+                                if (user != null && user.getTenantId() != null) {
+                                    tenantId = user.getTenantId();
+                                    userTenantCache.put(userId, tenantId);
+                                    log.debug("请求 {} - 设置租户ID: {} (从数据库-C端用户)", requestURI, tenantId);
+                                } else {
+                                    log.debug("请求 {} - C端用户 {} 没有租户ID", requestURI, userId);
+                                    // C端用户可以没有租户ID，不抛出异常
+                                }
+                            } finally {
+                                // 清除忽略标记
+                                TenantContext.setIgnore(false);
                             }
-                        } finally {
-                            // 清除忽略标记
-                            TenantContext.setIgnore(false);
+                        } else {
+                            log.debug("请求 {} - 设置租户ID: {} (从缓存-C端用户)", requestURI, tenantId);
                         }
-                    } else {
-                        log.debug("请求 {} - 设置租户ID: {} (从缓存-C端用户)", requestURI, tenantId);
+                    } catch (NumberFormatException e) {
+                        log.error("请求 {} - loginId格式错误: {}", requestURI, loginIdStr);
+                        throw new RuntimeException("登录ID格式错误");
                     }
                 }
                 

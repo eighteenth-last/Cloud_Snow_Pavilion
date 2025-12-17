@@ -1,7 +1,7 @@
 <template>
 	<view class="container">
 		<!-- 商品图片 -->
-		<image :src="product.img || '/static/logo.png'" class="product-banner" mode="aspectFill" />
+		<image :src="getImageUrl(product.img)" class="product-banner" mode="aspectFill" />
 
 		<!-- 商品信息 -->
 		<view class="product-info">
@@ -118,6 +118,21 @@ export default {
 				title: '立即购买功能开发中',
 				icon: 'none'
 			})
+		},
+		// 处理图片URL
+		getImageUrl(img) {
+			if (!img) {
+				return '/static/logo.png'
+			}
+			// 如果是相对路径，转换为完整URL
+			if (img.startsWith('/upload_img/')) {
+				return `http://localhost:8080/api${img}`
+			}
+			// 如果已经是完整URL
+			if (img.startsWith('http://') || img.startsWith('https://')) {
+				return img
+			}
+			return '/static/logo.png'
 		}
 	}
 }
@@ -206,8 +221,8 @@ export default {
 }
 
 .spec-item.active {
-	border-color: #3cc51f;
-	color: #3cc51f;
+	border-color: #94d888;
+	color: #94d888;
 }
 
 .detail-content {
@@ -266,7 +281,7 @@ export default {
 
 .btn-buy-now {
 	flex: 1;
-	background-color: #3cc51f;
+	background-color: #94d888;
 	color: #fff;
 	text-align: center;
 	padding: 25rpx 0;

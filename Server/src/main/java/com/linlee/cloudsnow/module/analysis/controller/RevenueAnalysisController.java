@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.linlee.cloudsnow.common.result.Result;
 import com.linlee.cloudsnow.module.analysis.dto.RevenueStatistics;
 import com.linlee.cloudsnow.module.analysis.dto.ProductSalesStatistics;
+import com.linlee.cloudsnow.module.analysis.dto.RevenueTrendItem;
 import com.linlee.cloudsnow.module.order.entity.OrderMain;
 import com.linlee.cloudsnow.module.order.entity.OrderItem;
 import com.linlee.cloudsnow.module.order.mapper.OrderMainMapper;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -155,5 +157,63 @@ public class RevenueAnalysisController {
         }
         
         return Result.success(stats);
+    }
+
+    @Operation(summary = "收入趋势")
+    @GetMapping("/revenueTrend")
+    public Result<List<RevenueTrendItem>> revenueTrend(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        
+        // 默认查询最近30天
+        LocalDate start = startDate != null ? 
+            LocalDate.parse(startDate) :
+            LocalDate.now().minusDays(29);
+        
+        LocalDate end = endDate != null ?
+            LocalDate.parse(endDate) :
+            LocalDate.now();
+        
+        // 查询时间范围内的已支付订单
+        LocalDateTime startDateTime = start.atStartOfDay();
+        LocalDateTime endDateTime = end.atTime(23, 59, 59);
+        
+        List<OrderMain> orders = orderMainMapper.selectList(
+                new LambdaQueryWrapper<OrderMain>()
+                        .ge(OrderMain::getStatus, 1) // 已支付及以上状态
+                        .between(OrderMain::getPayTime, startDateTime, endDateTime)
+        );
+        
+        // 按日期分组统计
+        Map<String, RevenueTrendItem> trendMap = new HashMap<>();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        
+        // 初始化日期范围内的所有日期
+        LocalDate currentDate = start;
+        while (!currentDate.isAfter(end)) {
+            String dateStr = currentDate.format(dateFormatter);
+            RevenueTrendItem item = new RevenueTrendItem();
+            item.setDate(dateStr);
+            item.setRevenue(BigDecimal.ZERO);
+            item.setOrderCount(0);
+            trendMap.put(dateStr, item);
+            currentDate = currentDate.plusDays(1);
+        }
+        
+        // 填充订单数据
+        for (OrderMain order : orders) {
+            String dateStr = order.getPayTime().format(dateFormatter);
+            RevenueTrendItem item = trendMap.get(dateStr);
+            if (item != null) {
+                item.setRevenue(item.getRevenue().add(order.getAmount()));
+                item.setOrderCount(item.getOrderCount() + 1);
+            }
+        }
+        
+        // 按日期排序
+        List<RevenueTrendItem> result = new ArrayList<>(trendMap.values());
+        result.sort(Comparator.comparing(RevenueTrendItem::getDate));
+        
+        return Result.success(result);
     }
 }

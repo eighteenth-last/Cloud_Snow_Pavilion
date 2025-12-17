@@ -18,9 +18,9 @@ public class UserCoupon implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /** ID */
-    @TableId(value = "id", type = IdType.AUTO)
-    private Long id;
+    /** 用户券ID */
+    @TableId(value = "user_coupon_id", type = IdType.AUTO)
+    private Long userCouponId;
 
     /** 租户ID */
     private Long tenantId;
@@ -31,13 +31,14 @@ public class UserCoupon implements Serializable {
     /** 优惠券ID */
     private Long couponId;
 
-    /** 状态：0未使用 1已使用 2已过期 */
+    /** 状态：1未使用 2已使用 3已过期 */
     private Integer status;
 
-    /** 领取时间 */
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime receiveTime;
-
     /** 使用时间 */
-    private LocalDateTime useTime;
+    @TableField("used_time")
+    private LocalDateTime usedTime;
+
+    /** 过期时间 */
+    @TableField("expire_time")
+    private LocalDateTime expireTime;
 }

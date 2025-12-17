@@ -243,12 +243,9 @@ const loadRevenueTrend = async () => {
       params.endDate = formatDate(dateRange.value[1])
     }
     
-    // TODO: 后端需要提供趋势数据接口
-    // const res = await request.get('/analysis/revenueTrend', { params })
-    // revenueTrendData.value = res.data
-    
-    // 模拟数据
-    revenueTrendData.value = []
+    // 获取收入趋势数据
+    const res = await request.get('/analysis/revenueTrend', { params })
+    revenueTrendData.value = res.data || []
     renderRevenueChart()
   } catch (error) {
     console.error(error)

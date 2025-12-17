@@ -17,6 +17,11 @@ public interface UserService extends IService<User> {
     User getByMobile(String mobile);
 
     /**
+     * 根据手机号和租户ID查询用户
+     */
+    User getByMobileAndTenant(String mobile, Long tenantId);
+
+    /**
      * 创建新用户
      */
     User createUser(String mobile, Long tenantId);

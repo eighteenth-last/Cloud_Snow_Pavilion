@@ -4,13 +4,19 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.linlee.cloudsnow.common.result.Result;
+import com.linlee.cloudsnow.common.util.LoginUserUtil;
 import com.linlee.cloudsnow.module.order.dto.CreateOrderRequest;
+import com.linlee.cloudsnow.module.order.dto.OrderDetailResponse;
+import com.linlee.cloudsnow.module.order.entity.OrderItem;
 import com.linlee.cloudsnow.module.order.entity.OrderMain;
+import com.linlee.cloudsnow.module.order.mapper.OrderItemMapper;
 import com.linlee.cloudsnow.module.order.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 订单Controller
@@ -25,13 +31,29 @@ public class OrderController {
 
     @Autowired
     private OrderService orderService;
+    
+    @Autowired
+    private OrderItemMapper orderItemMapper;
 
     @Operation(summary = "创建订单")
     @PostMapping("/create")
     public Result<Long> createOrder(@RequestBody CreateOrderRequest request) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        Long orderId = orderService.createOrder(userId, request);
-        return Result.success(orderId);
+        Long userId = LoginUserUtil.getCurrentUserId();
+        
+        // C端用户直接下单
+        if (userId != null) {
+            Long orderId = orderService.createOrder(userId, request);
+            return Result.success(orderId);
+        }
+        
+        // B端管理员线下下单（代客下单）
+        if (LoginUserUtil.isAdmin()) {
+            // 线下订单，使用特殊用户ID 0 表示线下客户
+            Long orderId = orderService.createOrder(0L, request);
+            return Result.success(orderId);
+        }
+        
+        return Result.fail("请先登录");
     }
 
     @Operation(summary = "我的订单列表")
@@ -41,7 +63,10 @@ public class OrderController {
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false) Integer status) {
         
-        Long userId = StpUtil.getLoginIdAsLong();
+        Long userId = LoginUserUtil.getCurrentUserId();
+        if (userId == null) {
+            return Result.fail("请使用小程序用户账号");
+        }
         
         LambdaQueryWrapper<OrderMain> wrapper = new LambdaQueryWrapper<OrderMain>()
                 .eq(OrderMain::getUserId, userId)
@@ -57,15 +82,31 @@ public class OrderController {
 
     @Operation(summary = "订单详情")
     @GetMapping("/{orderId}")
-    public Result<OrderMain> getOrderDetail(@PathVariable Long orderId) {
+    public Result<OrderDetailResponse> getOrderDetail(@PathVariable Long orderId) {
+        // 查询订单主信息
         OrderMain order = orderService.getById(orderId);
-        return Result.success(order);
+        
+        // 查询订单明细
+        List<OrderItem> items = orderItemMapper.selectList(
+                new LambdaQueryWrapper<OrderItem>()
+                        .eq(OrderItem::getOrderId, orderId)
+        );
+        
+        // 组装响应
+        OrderDetailResponse response = new OrderDetailResponse();
+        response.setOrder(order);
+        response.setItems(items);
+        
+        return Result.success(response);
     }
 
     @Operation(summary = "取消订单")
     @PostMapping("/{orderId}/cancel")
     public Result<Void> cancelOrder(@PathVariable Long orderId) {
-        Long userId = StpUtil.getLoginIdAsLong();
+        Long userId = LoginUserUtil.getCurrentUserId();
+        if (userId == null) {
+            return Result.fail("请使用小程序用户账号");
+        }
         orderService.cancelOrder(orderId, userId);
         return Result.success();
     }

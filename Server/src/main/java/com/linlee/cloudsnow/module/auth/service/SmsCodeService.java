@@ -38,8 +38,14 @@ public class SmsCodeService {
         
         log.info("生成验证码：手机号={}, 验证码={}", mobile, code);
         
-        // TODO: 实际项目中这里需要调用短信服务发送验证码
-        // 开发环境直接返回验证码方便测试
+        // 发送短信验证码
+        // 实际项目中需要集成短信服务商（如阿里云短信、腾讯云短信等）：
+        // 1. 引入对应SDK依赖
+        // 2. 配置AccessKey和模板ID
+        // 3. 调用发送接口：smsClient.sendSms(mobile, code);
+        // 开发环境下直接返回验证码方便测试
+        sendSms(mobile, code);
+        
         return code;
     }
 
@@ -66,5 +72,31 @@ public class SmsCodeService {
         }
         
         return result;
+    }
+    
+    /**
+     * 发送短信
+     * 实际项目中需要替换为真实的短信服务商API调用
+     */
+    private void sendSms(String mobile, String code) {
+        // 模拟短信发送
+        log.info("【模拟短信】发送验证码到 {}: 您的验证码是{}，{}分钟内有效。", mobile, code, EXPIRE_MINUTES);
+        
+        // 实际集成示例（以阿里云短信为例）：
+        /*
+        try {
+            SendSmsRequest request = new SendSmsRequest();
+            request.setPhoneNumbers(mobile);
+            request.setSignName("云阶雪阁");
+            request.setTemplateCode("SMS_XXXXXXXX");
+            request.setTemplateParam("{\"code\":\"" + code + "\"}");
+            
+            SendSmsResponse response = smsClient.sendSms(request);
+            log.info("短信发送成功: {}", response.getCode());
+        } catch (Exception e) {
+            log.error("短信发送失败", e);
+            throw new BusinessException("短信发送失败");
+        }
+        */
     }
 }

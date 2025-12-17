@@ -61,6 +61,12 @@ const routes = [
         meta: { title: '优惠券管理' }
       },
       {
+        path: 'carousel',
+        name: 'Carousel',
+        component: () => import('../views/Carousel.vue'),
+        meta: { title: '轮播图管理' }
+      },
+      {
         path: 'analysis',
         name: 'Analysis',
         component: () => import('../views/Analysis.vue'),

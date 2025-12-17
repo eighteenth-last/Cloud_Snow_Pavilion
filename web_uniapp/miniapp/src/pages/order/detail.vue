@@ -318,7 +318,7 @@ export default {
 }
 
 .status-icon.status-paid {
-	color: #3cc51f;
+	color: #94d888;
 }
 
 .status-icon.status-making {
@@ -552,13 +552,13 @@ export default {
 }
 
 .btn-pay {
-	background-color: #3cc51f;
+	background-color: #94d888;
 	color: #fff;
-	border-color: #3cc51f;
+	border-color: #94d888;
 }
 
 .btn-contact {
-	border-color: #3cc51f;
-	color: #3cc51f;
+	border-color: #94d888;
+	color: #94d888;
 }
 </style>

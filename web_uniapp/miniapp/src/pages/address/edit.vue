@@ -23,12 +23,21 @@
 
 			<view class="form-item">
 				<text class="form-label">所在地区</text>
-				<view class="form-picker" @click="showRegionPicker">
-					<text :class="['picker-text', form.region ? '' : 'placeholder']">
-						{{ form.region || '请选择省市区' }}
-					</text>
-					<text class="picker-arrow">></text>
-				</view>
+				<picker 
+					mode="multiSelector" 
+					:value="regionValue" 
+					:range="regionColumns"
+					range-key="label"
+					@change="onRegionChange"
+					@columnchange="onRegionColumnChange"
+				>
+					<view class="form-picker">
+						<text :class="['picker-text', form.region ? '' : 'placeholder']">
+							{{ form.region || '请选择省市区' }}
+						</text>
+						<text class="picker-arrow">></text>
+					</view>
+				</picker>
 			</view>
 
 			<view class="form-item">
@@ -46,7 +55,7 @@
 				<switch 
 					:checked="form.isDefault" 
 					@change="onDefaultChange"
-					color="#3cc51f"
+					color="#94d888"
 				/>
 			</view>
 		</view>
@@ -62,6 +71,8 @@
 </template>
 
 <script>
+import { regionData, parseRegionValue } from '@/utils/region-data.js'
+
 export default {
 	data() {
 		return {
@@ -70,9 +81,16 @@ export default {
 				receiver: '',
 				mobile: '',
 				region: '',
+				province: '',
+				city: '',
+				district: '',
 				detail: '',
 				isDefault: false
-			}
+			},
+			// 地区选择器相关
+			regionValue: [0, 0, 0], // 当前选中的索引 [省索引, 市索引, 区索引]
+			regionColumns: [[], [], []], // 三列数据
+			regionData: regionData // 原始数据
 		}
 	},
 	onLoad(options) {
@@ -80,8 +98,53 @@ export default {
 			this.addressId = options.id
 			this.loadAddressDetail()
 		}
+		// 初始化地区选择器
+		this.initRegionPicker()
 	},
 	methods: {
+		// 初始化地区选择器
+		initRegionPicker() {
+			// 初始化省份列
+			this.regionColumns[0] = this.regionData
+			// 初始化城市列（默认第一个省的城市）
+			this.regionColumns[1] = this.regionData[0].children || []
+			// 初始化区县列（默认第一个省第一个市的区县）
+			this.regionColumns[2] = this.regionData[0].children[0]?.children || []
+		},
+		// 地区选择器列变化
+		onRegionColumnChange(e) {
+			const { column, value } = e.detail
+			const newValue = [...this.regionValue]
+			newValue[column] = value
+			
+			if (column === 0) {
+				// 省份变化，更新城市和区县
+				newValue[1] = 0
+				newValue[2] = 0
+				this.regionColumns[1] = this.regionData[value].children || []
+				this.regionColumns[2] = this.regionData[value].children[0]?.children || []
+			} else if (column === 1) {
+				// 城市变化，更新区县
+				newValue[2] = 0
+				const provinceIndex = newValue[0]
+				this.regionColumns[2] = this.regionData[provinceIndex].children[value]?.children || []
+			}
+			
+			this.regionValue = newValue
+		},
+		// 地区选择确认
+		onRegionChange(e) {
+			const valueArr = e.detail.value
+			const result = parseRegionValue(valueArr, this.regionColumns)
+			
+			if (result) {
+				this.form.province = result.province
+				this.form.city = result.city
+				this.form.district = result.district
+				this.form.region = result.province + result.city + result.district
+				this.regionValue = valueArr
+			}
+		},
 		async loadAddressDetail() {
 			try {
 				const token = uni.getStorageSync('token')
@@ -98,21 +161,43 @@ export default {
 					this.form = {
 						receiver: data.receiver,
 						mobile: data.mobile,
+						province: data.province,
+						city: data.city,
+						district: data.district,
 						region: data.province + data.city + data.district,
 						detail: data.address,
 						isDefault: data.isDefault === 1
 					}
+					// 根据已有地址数据，定位地区选择器的位置
+					this.locateRegionValue()
 				}
 			} catch (error) {
 				console.error('加载地址详情失败', error)
 			}
 		},
-		showRegionPicker() {
-			// 这里可以使用uni-app的picker组件或第三方地区选择组件
-			uni.showToast({
-				title: '地区选择功能开发中',
-				icon: 'none'
-			})
+		// 根据省市区名称定位选择器位置
+		locateRegionValue() {
+			const { province, city, district } = this.form
+			if (!province || !city || !district) return
+			
+			// 查找省份索引
+			const provinceIndex = this.regionData.findIndex(p => p.label === province)
+			if (provinceIndex === -1) return
+			
+			// 查找城市索引
+			const cities = this.regionData[provinceIndex].children || []
+			const cityIndex = cities.findIndex(c => c.label === city)
+			if (cityIndex === -1) return
+			
+			// 查找区县索引
+			const districts = cities[cityIndex].children || []
+			const districtIndex = districts.findIndex(d => d.label === district)
+			if (districtIndex === -1) return
+			
+			// 更新选择器数据
+			this.regionValue = [provinceIndex, cityIndex, districtIndex]
+			this.regionColumns[1] = cities
+			this.regionColumns[2] = districts
 		},
 		onDefaultChange(e) {
 			this.form.isDefault = e.detail.value
@@ -160,9 +245,9 @@ export default {
 				const data = {
 					receiver: this.form.receiver,
 					mobile: this.form.mobile,
-					province: '广东省', // 应该从地区选择器获取
-					city: '深圳市',
-					district: '南山区',
+					province: this.form.province,
+					city: this.form.city,
+					district: this.form.district,
 					address: fullAddress,
 					isDefault: this.form.isDefault ? 1 : 0
 				}
@@ -313,7 +398,7 @@ export default {
 	bottom: 120rpx;
 	left: 30rpx;
 	right: 30rpx;
-	background-color: #3cc51f;
+	background-color: #94d888;
 	color: #fff;
 	text-align: center;
 	padding: 30rpx 0;

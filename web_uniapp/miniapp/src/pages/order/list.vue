@@ -91,15 +91,19 @@ export default {
 					return
 				}
 
+				// 构建请求参数，只有status不为null时才添加
+				const params = {}
+				if (this.currentStatus !== null) {
+					params.status = this.currentStatus
+				}
+
 				const res = await uni.request({
 					url: 'http://localhost:8080/api/order/my',
 					method: 'GET',
 					header: {
 						'Authorization': `Bearer ${token}`
 					},
-					data: {
-						status: this.currentStatus
-					}
+					data: params
 				})
 				if (res.data.code === 200) {
 					this.orderList = res.data.data.records || []
@@ -193,7 +197,7 @@ export default {
 }
 
 .tab-item.active {
-	color: #3cc51f;
+	color: #94d888;
 	font-weight: bold;
 }
 
@@ -205,7 +209,7 @@ export default {
 	transform: translateX(-50%);
 	width: 60rpx;
 	height: 4rpx;
-	background-color: #3cc51f;
+	background-color: #94d888;
 }
 
 .order-list {
@@ -243,7 +247,7 @@ export default {
 }
 
 .status-paid {
-	color: #3cc51f;
+	color: #94d888;
 }
 
 .status-making {
@@ -302,9 +306,9 @@ export default {
 }
 
 .btn-pay {
-	background-color: #3cc51f;
+	background-color: #94d888;
 	color: #fff;
-	border-color: #3cc51f;
+	border-color: #94d888;
 }
 
 .empty {
